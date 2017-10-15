@@ -1,0 +1,118 @@
+'finished 676 solar charging controller
+'
+'mcu will sense the battery charging state and
+'automatically turn off when the battery is fully charged.
+'And check the charging state after full charge mode and connect
+'the battery to solar automatically
+
+'rc1 to rc4 for charging indicator
+'ra0 for vtg sensing at battery terminal
+'
+'battery     sensor     decimal read out
+'10.8        2.7        553
+'11.6        2.9        594
+'12.4        3.1        635
+'13.2        3.3        675
+'14           3.5        717
+'16f676 analog test
+'use registers
+
+'TRISA
+'TRISC
+'PORTA
+'PORTC
+'ADCON0
+'ADcon1
+'ANSEL
+'ADRESL
+'ADRESH
+'RESS WORD SIZE VAR     
+TRISA=%00000001    'RA0 is analog input
+TRISC=%00000000    'PORTC is OUTPUT
+ANSEL=%00000001    'AN0 channel 0 is selected
+RESS var word      '16 bit variable to store both ADRESL AND ADRESH
+FET var PORTA.2    'charging control transistor
+EMP var PORTA.1
+
+
+ADCON1=%00000000   'ADCS is Fosc/2
+ADCON0=%10000001   'right justify, AN), ADON
+
+loop:
+ADCON0=%10000011
+pause 50
+if ADCON0.1=1 then loop
+
+
+show:              'just testing it is working or not
+RESS=ADRESL
+ress.8=ADRESH.0
+ress.9=ADRESH.1
+
+   
+        if RESS<553 then empty
+        if ress>553 and REss<594 then show25
+        if ress>594 and REss<635 then show50
+        if ress>635 and REss<675 then show75
+        if ress>675 and ress<717 then show100
+        if ress>720 then full
+        
+        
+show25:
+fet=1
+PORTC=%000000
+PORTC=%000010
+pause 100
+PORTC=%000000
+pause 1000
+goto loop
+
+show50:
+fet=1
+PORTC=%000000
+PORTC=%000110
+pause 100
+PORTC=%000000
+pause 1000
+goto loop
+
+show75:
+fet=1
+PORTC=%000000
+PORTC=%010110
+pause 100
+PORTC=%000000
+pause 1000
+goto loop
+
+show100:
+fet=1
+PORTC=%000000
+PORTC=%110110
+pause 100
+PORTC=%000000
+pause 1000
+goto loop
+
+empty:              'blink empety indicator
+PORTC=%000000
+fet=1
+emp=1
+pause 100
+emp=0
+pause 1000
+goto loop
+
+full:
+fet=0                'blink full charge indicator in slow rate
+PORTC=%000000
+PORTC=%110110
+pause 200
+PORTC=%000000
+pause 1000
+goto loop
+
+ end
+
+
+           
